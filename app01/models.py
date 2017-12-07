@@ -41,6 +41,8 @@ class Question(models.Model):
     )
     tp = models.IntegerField(choices=question_types)
 
+    naire = models.ForeignKey(Questionnaire,default=1)
+
 class Option(models.Model):
     """
     单选题的选项

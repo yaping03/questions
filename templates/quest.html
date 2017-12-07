@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        .hide{
+            display: none;
+        }
+        ol {
+            padding: 0;
+            list-style: none;
+            counter-reset: sectioncounter
+        }
+
+        ol > li:before {
+            content: '问题' counter(sectioncounter) ':';
+            counter-increment: sectioncounter;
+            font-size: 18px;
+            color: #d4d4d4;
+        }
+
+        ol > li:nth-of-type(odd) {
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+{% csrf_token %}
+<button class="btn add">添加</button> &nbsp; <button class="btn save">保存</button> &nbsp; <button class="btn cancle">退出</button>
+<ol>
+    {% for item in form_dict %}
+            <li> <button class="btn del">×</button>
+                <div pk="{{ item.obj.id }}">
+                    <p>问题名称:{{ item.form.caption }}</p>
+                    <p>问题类型:{{ item.form.tp }} <a href="#" class="{{ item.option_class }} addopt">添加选项</a> </p>
+                    <ul>
+                        {% for v in item.options %}
+                            <li id="{{ v.obj.id }}">{{ v.form }} <button class="btn optdel">×</button></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </li>
+        {% endfor %}
+
+</ol>
+<script src="/static/jquery.js"></script>
+<script>
+    $(".cancle").click(function () {
+        window.location.href="/index"
+    });
+    $(".save").click(function () {
+        pList = [];
+        $('ol>li').each(function(){
+            var pid=$(this).children("div").attr("pk");
+            var title=$(this).children("div").children("p").children("input").val();
+            var type=$(this).children("div").children("p").children("select").val();
+            if(type=='2'){
+                optionlist=[];
+                $(this).children("div").children("ul").children("li").each(function () {
+                    var id=$(this).attr("id");
+                    var title=$(this).children("input").first().val();
+                    var score=$(this).children("input").last().val();
+                    optionlist.push({'id':id,'title':title,'score':score})
+                });
+                pList.push({'pid':pid,'title':title,'type':type,'options':optionlist})
+            }
+            else {
+                pList.push({'pid':pid,'title':title,'type':type})
+            }
+			});
+        $.ajax({
+					url:'/quest/{{ id }}/',
+					type:'post',
+					data: {'data':JSON.stringify(pList),"csrfmiddlewaretoken":$("[name='csrfmiddlewaretoken']").val()},
+					success:function(arg){
+                        if(arg==="ok"){
+                            alert("保存成功");
+                            location.href='/quest/{{ id }}/'
+                        }
+					}
+				});
+    });
+    $(".add").click(function () {
+        var the_add=$("ol li:first").clone();
+        the_add.children("div").attr("pk","");
+        $("ol").append(the_add);
+        the_add.children("div").children("p").children("input").first().val("")
+    });
+
+    $("ol").on("click",".addopt",function () {
+        var opt=$(this).parent().next();
+        console.log(opt);
+        opt.append('<li id=""><label for="id_name">选项名称:</label> <input type="text" name="name" value="" maxlength="32" required="" id="id_name"> <label for="id_score">选项对应的分值:</label> <input type="number" name="score" value="" required="" id="id_score"> <button class="btn optdel">×</button> </li>')
+    });
+    $("ol").on("click",".del",function () {
+        var rem = $(this).parent();
+        var qid = $(this).next().attr("pk");
+        rem.remove();
+        $.ajax({
+            url:"/del/quest/{{ id }}/",
+            type:"POST",
+            data:{"csrfmiddlewaretoken":$("[name='csrfmiddlewaretoken']").val(),opera:"del",qid:qid},
+            success:function (data) {
+                if (data==="ok"){
+                    rem.remove();
+                }
+            }
+        })
+    });
+    $("ol").on("click",".optdel",function () {
+        var qid = $(this).parent();
+         qid.remove();
+        $.ajax({
+            url:"/del/option/{{ id }}/",
+            type:"POST",
+            data:{"csrfmiddlewaretoken":$("[name='csrfmiddlewaretoken']").val(),opera:"del",qid:qid.attr("id")},
+            success:function (data) {
+                if (data==="ok"){
+                    qid.remove();
+                }
+            }
+        })
+    });
+    $("ol").on("change","select",function () {
+        $(this).next().removeClass("hide");
+        if ($(this).val()!=2){
+        $(this).next().addClass("hide");
+        $(this).parent().next().empty()
+        }
+    })
+</script>
+
+</body>
+</html>

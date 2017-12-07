@@ -20,4 +20,8 @@ from app01 import views
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^quest/(\d+)/$', views.quest),
+    url(r'^del/quest/(\d+)/$', views.del_quest),
+    url(r'^del/option/(\d+)/$', views.del_option),
+    # url(r'^quest/add/$', views.add_quest),
+    url(r'^index/$', views.index),
 ]
